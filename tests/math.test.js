@@ -1,0 +1,24 @@
+'use strict';
+const assert=require('node:assert/strict');
+const M=require('../math.js');
+const die=[1,2,3,4,5,6],near=(a,b,t=1e-10)=>assert.ok(Math.abs(a-b)<t,`${a} should be close to ${b}`);
+const one=M.distribution([die]);
+assert.equal(one.outcomes,6);near(M.interval(one.pmf,3,3),1/6);
+near(M.cdf(one.pmf,4)-M.cdf(one.pmf,2),1/3);
+near(M.interval(one.pmf,3,3),1/6);near(M.cdf(one.pmf,.9),0);near(M.cdf(one.pmf,6),1);
+const two=M.distribution([die,die]);assert.equal(two.outcomes,36);
+assert.deepEqual([...two.counts].sort((a,b)=>a[0]-b[0]).map(x=>x[1]),[1,2,3,4,5,6,5,4,3,2,1]);
+near(M.interval(two.pmf,6,8),4/9);near(M.cdf(two.pmf,7),7/12);
+const three=M.distribution([die,die,die]);assert.equal(three.outcomes,216);assert.equal(three.pmf.size,16);
+assert.equal(three.counts.get(3),1);assert.equal(three.counts.get(10),27);assert.equal(three.counts.get(18),1);
+near([...three.pmf.values()].reduce((a,b)=>a+b,0),1);near([...three.pmf].reduce((s,[x,p])=>s+x*p,0),10.5);
+const irregular=M.distribution([[0,0,0,1,8,9],[0,1,1,1,2,9],[0,0,2,2,8,9]]);
+assert.equal(irregular.outcomes,216);assert.equal(irregular.counts.get(0),6);
+near([...irregular.pmf.values()].reduce((a,b)=>a+b,0),1);assert.ok(irregular.pmf.size<28);
+const empirical=M.empirical([0,0,2,5]);near(empirical.pmf.get(0),.5);near(M.cdf(empirical.pmf,1),.5);near(M.interval(empirical.pmf,0,2),.75);
+assert.equal(M.empirical([]).pmf.size,0);assert.equal(M.cdf(M.empirical([]).pmf,9),0);
+for(const p of [0,.15,.5,7/12,1]){const b=M.binomial(10,p);near(b.reduce((a,b)=>a+b,0),1);near(b.reduce((s,v,k)=>s+k*v,0),10*p);}
+near(M.normalCDF(0),.5,1e-7);near(M.normalCDF(1)-M.normalCDF(-1),.68268949,1e-6);
+near(M.normalPDF(0),1/Math.sqrt(2*Math.PI));
+assert.deepEqual(M.roll([[0,9],[2,4]],()=>0),[0,2]);assert.deepEqual(M.roll([[0,9],[2,4]],()=>.999),[9,4]);
+console.log('Passed: exact dice models, empirical PMFs, CDF boundaries, binomial counts and normal probabilities.');

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="A hands-on university seminar for empirical scientists. Build distributions from observations, predict unseen dice rolls and test your predictions.">
+  <title>Observations to predictions · Probability seminar</title>
+  <link rel="stylesheet" href="styles.css"><script defer src="math.js"></script><script defer src="app.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to lesson</a>
+<header class="site-header"><a class="wordmark" href="#">FIELDNOTES <span>Probability & statistics</span></a><div class="header-actions"><button id="export-work" class="quiet">Save notebook</button><label class="button quiet" for="import-work">Load notebook</label><input type="file" id="import-work" accept="application/json" hidden><button id="print-work" class="quiet">Print worksheets</button></div></header>
+<div class="page-layout">
+<aside class="sidebar"><div class="eyebrow">Seminar 1 · Independent observations</div><nav aria-label="Lesson sections"><a href="#start">The experiment</a><a href="#frequencies">Frequencies to probabilities</a><a href="#sums">Sums and cumulative probability</a><a href="#regular-lab">Regular dice lab</a><a href="#irregular-lab">Irregular dice lab</a><a href="#continuous">A bridge to continuous data</a><a href="#reflect">Compare and explain</a></nav><p>3 hours<br>Groups of 3–4<br>Physical dice or simulation</p><a class="small-link" href="instructor.html">Instructor guide</a><div id="save-status" class="save-status" role="status">Work saves in this browser.</div></aside>
+<main id="main">
+<section id="start" class="opening">
+  <div class="eyebrow">A laboratory for empirical scientists</div>
+  <h1>Observations<br>to predictions.</h1>
+  <p class="standfirst">How do measurements become a probability model—and what does that model tell us about something we have not seen?</p>
+  <p>Start with ordinary dice. Build a distribution from repeated observations. Use it to answer questions and predict ten new rolls. Then change the dice and repeat the scientific process.</p>
+  <div class="cup-story" aria-label="Three roles in the experiment">
+    <div><div class="cup clear"><span aria-hidden="true">?</span></div><h3>Clear · True value</h3><p>The reference value. Held back during data collection.</p></div>
+    <div><div class="cup fuzzy"><span aria-hidden="true">12</span></div><h3>Fuzzy · Observation</h3><p>Your imperfect measurement. This is the data you model.</p></div>
+    <div><div class="cup opaque"><span aria-hidden="true">?</span></div><h3>Opaque · Prediction</h3><p>A fresh, independent roll. Commit before checking it.</p></div>
+  </div>
+  <div class="experiment-line"><span>Observe</span><span>Count</span><span>Model</span><span>Predict</span><span>Test</span></div>
+  <p class="important">The dice are independent across rolls. The opaque cup uses the same dice process as its training data. Switching from regular to irregular dice starts a new experiment.</p>
+</section>
+
+<section id="frequencies" class="lesson-section">
+  <div class="section-intro"><span class="eyebrow">Quick lesson · Repeated observations</span><h2>From counts to probabilities</h2><p>A frequency answers “How many times did this happen?” Divide by the number of trials to estimate how often it happens. This is our frequentist starting point: learn a fixed process from repeated trials, then test what the estimate predicts.</p></div>
+  <div class="visual-example"><div class="controls"><button id="sample-one">Roll once</button><button id="sample-thirty" class="secondary">Add 30 rolls</button><button id="reset-one" class="quiet">Start again</button><label>Vertical axis <select id="frequency-axis"><option value="count">Frequency</option><option value="probability">Relative frequency</option></select></label></div><div id="frequency-chart" class="chart"></div><div id="frequency-caption" class="chart-caption" aria-live="polite"></div></div>
+  <div class="two-column"><div><h3>Write the rule</h3><div class="equation"><math display="block"><mrow><mover><mi>p</mi><mo>^</mo></mover><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mi>n</mi><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mi>N</mi></mfrac></mrow></math></div><p><i>n(x)</i> is the count at value <i>x</i>; <i>N</i> is the total number of observations. The hat marks an estimate.</p></div><div><h3>Use it to solve a question</h3><p>Estimate the chance of a value from 2 to 4 inclusive. Add the relative frequencies for 2, 3 and 4. For a known fair die the theoretical answer is 3/6; your estimate will vary.</p><p class="important">An empirical frequency of zero means “not observed in this sample.” It does not establish impossibility.</p></div></div>
+  <label class="notebook-prompt" for="frequency-note">Your explanation · Why might two groups estimate different probabilities for the same fair die?</label><textarea id="frequency-note" data-note="frequency" rows="3" placeholder="Use the words sample, frequency and probability."></textarea>
+</section>
+
+<section id="sums" class="lesson-section">
+  <div class="section-intro"><span class="eyebrow">Quick lesson · A distribution is a model</span><h2>One die. Two dice. Three dice.</h2><p>Adding independent dice changes the distribution of the total. Repeating an experiment gives more data about that distribution. These are two different operations.</p></div>
+  <div class="controls"><label>Number of regular dice <select id="dice-count"><option value="1">1 die</option><option value="2">2 dice</option><option value="3" selected>3 dice</option></select></label><label>Interval starts <input id="sum-low" type="number" value="8" min="1" max="18"></label><label>Interval ends <input id="sum-high" type="number" value="12" min="1" max="18"></label></div>
+  <div id="outcome-summary" class="chart-caption"></div><div class="chart-pair"><figure><figcaption>Probability mass function p<sub>S</sub>(s)</figcaption><div id="sum-pmf" class="chart"></div></figure><figure><figcaption>Cumulative distribution function F<sub>S</sub>(x)</figcaption><div id="sum-cdf" class="chart"></div></figure></div>
+  <div class="two-column"><div><h3>The mass function</h3><div class="equation"><math display="block"><mrow><msub><mi>p</mi><mi>S</mi></msub><mo>(</mo><mi>s</mi><mo>)</mo><mo>=</mo><mi>P</mi><mo>(</mo><mi>S</mi><mo>=</mo><mi>s</mi><mo>)</mo></mrow></math></div><p>Each bar is the probability of one possible total. Its height is probability, not a continuous density.</p></div><div><h3>The cumulative function</h3><div class="equation"><math display="block"><mrow><msub><mi>F</mi><mi>S</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mi>P</mi><mo>(</mo><mi>S</mi><mo>≤</mo><mi>x</mi><mo>)</mo></mrow></math></div><p>Accumulate the mass at every total at or below <i>x</i>. The CDF is a step function.</p></div></div>
+  <div class="equation"><math display="block"><mrow><mi>P</mi><mo>(</mo><mi>a</mi><mo>≤</mo><mi>S</mi><mo>≤</mo><mi>b</mi><mo>)</mo><mo>=</mo><msub><mi>F</mi><mi>S</mi></msub><mo>(</mo><mi>b</mi><mo>)</mo><mo>−</mo><msub><mi>F</mi><mi>S</mi></msub><mo>(</mo><mi>a</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow></math><p>For integer-valued totals and integer endpoints.</p></div>
+  <details id="interval-answer"><summary>Check the selected interval</summary><p id="interval-result"></p></details>
+  <p class="important">Three regular dice have 6³ = 216 equally likely ordered face combinations, but only 16 possible totals: 3–18. Three dice are still discrete; a smooth normal curve would be an approximation.</p>
+</section>
+
+<section id="regular-lab" class="lesson-section lab-section" data-lab="regular"><div class="section-intro"><span class="eyebrow">Game 1 · Learn the method</span><h2>The regular dice experiment</h2><p>Use three ordinary dice. Observe through the fuzzy cup, build a model from your measurements, and make predictions for ten fresh opaque-cup rolls. Keep reference values out of your training notebook.</p></div><div id="regular-workspace"></div></section>
+
+<section id="irregular-lab" class="lesson-section lab-section" data-lab="irregular"><div class="section-intro"><span class="eyebrow">Game 2 · Discover a different process</span><h2>New dice. New distribution.</h2><p>Replace the dice with three six-sided dice whose faces have values between 0 and 9. Values may repeat and the dice may differ. Discover the process from rolls; the face lists are not shown.</p><p>Build a new model from new fuzzy observations. Choose intervals, predict ten new opaque rolls and compare the results. The method stays the same even when the outcome distribution changes.</p></div><div id="irregular-workspace"></div></section>
+
+<section id="continuous" class="lesson-section">
+  <div class="section-intro"><span class="eyebrow">Optional bridge · Continuous measurements</span><h2>When bars become a density</h2><p>Dice totals use a mass function <i>p(x)</i> and a cumulative function <i>F(x)</i>. For a continuous measurement model, <i>f(x)</i> denotes a density. The probability of an interval is an area, not the height of the curve.</p></div>
+  <div class="controls"><label>Mean μ <input id="normal-mean" type="range" min="-2" max="2" value="0" step="0.1"></label><label>SD σ <input id="normal-sd" type="range" min="0.4" max="2" value="1" step="0.1"></label><label>From a <input id="normal-low" type="number" min="-6" max="6" step="0.1" value="-1"></label><label>To b <input id="normal-high" type="number" min="-6" max="6" step="0.1" value="1"></label></div>
+  <div id="normal-chart" class="chart"></div><div id="normal-caption" class="chart-caption" aria-live="polite"></div>
+  <div class="equation"><math display="block"><mrow><mi>f</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mrow><mi>σ</mi><msqrt><mrow><mn>2</mn><mi>π</mi></mrow></msqrt></mrow></mfrac><msup><mi>e</mi><mrow><mo>−</mo><mfrac><msup><mrow><mo>(</mo><mi>x</mi><mo>−</mo><mi>μ</mi><mo>)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msup><mi>σ</mi><mn>2</mn></msup></mrow></mfrac></mrow></msup></mrow></math></div>
+  <div class="equation"><math display="block"><mrow><mi>P</mi><mo>(</mo><mi>a</mi><mo>≤</mo><mi>X</mi><mo>≤</mo><mi>b</mi><mo>)</mo><mo>=</mo><msubsup><mo>∫</mo><mi>a</mi><mi>b</mi></msubsup><mi>f</mi><mo>(</mo><mi>x</mi><mo>)</mo><mi mathvariant="normal">d</mi><mi>x</mi><mo>=</mo><mi>F</mi><mo>(</mo><mi>b</mi><mo>)</mo><mo>−</mo><mi>F</mi><mo>(</mo><mi>a</mi><mo>)</mo></mrow></math></div>
+  <p>Gaussian and normal name the same family. The standard normal has μ = 0 and σ² = 1. More raw observations do not make a process normal. The central limit theorem concerns standardized sums or means under assumptions such as independent, identically distributed values with finite variance.</p>
+</section>
+
+<section id="reflect" class="lesson-section">
+  <div class="section-intro"><span class="eyebrow">Seminar discussion</span><h2>What did the observations let you know?</h2></div>
+  <div class="reflection-list"><label>Process and measurement<textarea data-note="process" rows="3" placeholder="Which change came from new dice? Which could come from the fuzzy observation process?"></textarea></label><label>Prediction and validation<textarea data-note="validation" rows="3" placeholder="Did predicted and observed counts agree? How much could ten-roll sampling variation explain?"></textarea></label><label>Limits of inference<textarea data-note="limits" rows="3" placeholder="Can noisy observations alone identify the true distribution? What calibration or assumptions would you need?"></textarea></label></div>
+  <p class="important">The empirical distribution of fuzzy readings estimates p<sub>Y</sub>, the distribution of observations. Using it to predict true totals assumes the measurement error is small or has been accounted for. The validation experiment can expose a mismatch; it does not automatically identify its cause.</p>
+  <p>Lesson 2 will change the independence assumptions: linked outcomes, swapping dice between cups, covariance and Gaussian processes.</p>
+  <details><summary>Notation and references</summary><p>Use P(event) for a probability; p(x) for discrete mass; F(x) for a CDF; and f(x) for continuous density. A hat indicates an estimate. Some books use f for a discrete mass function too; the distinction is the type of variable, not the letter alone.</p><p><a href="https://www.itl.nist.gov/div898/handbook/eda/section3/eda3661.htm">NIST · Normal distribution and CLT</a><br><a href="https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc51.htm">NIST · Normal PDF and CDF</a><br><a href="https://www.nist.gov/itl/sed/topic-areas/measurement-uncertainty">NIST · Measurement uncertainty</a></p></details>
+</section>
+<footer>Lesson 1 · Introduction to probability and statistics for empirical scientists</footer>
+</main></div><div id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="noscript">Enable JavaScript to use the experiments and notebook. The instructor guide remains readable without it.</p></noscript>
+</body></html>

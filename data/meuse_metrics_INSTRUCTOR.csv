@@ -1,0 +1,4 @@
+"metric","value"
+"baseline_RMSE_log",0.780681893696652
+"spatial_RMSE_log",0.37816088440273
+"observed_coverage95",1

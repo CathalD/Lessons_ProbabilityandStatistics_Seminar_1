@@ -7,7 +7,7 @@
   // Teaching preset. Equal face probabilities; labels are intentionally absent from the student UI.
   const irregularDice=[[0,0,0,1,8,9],[0,1,1,1,2,9],[0,0,2,2,8,9]];
   const cfg={regular:{name:'Regular dice',dice:regularDice,min:3,max:18,intervals:[[3,8],[9,12],[13,18]]},irregular:{name:'Irregular dice',dice:irregularDice,min:0,max:27,intervals:[[0,8],[9,17],[18,27]]}};
-  function freshLab(kind) { return {runId:Date.now().toString(36)+'-'+Math.random().toString(36).slice(2),mode:'simulation',observations:[],lastReading:null,showComputed:false,pmfMax:.3,strokes:{pmf:[],cdf:[]},functions:{pmf:'',cdf:''},description:'',reasoning:'',reflection:'',intervals:cfg[kind].intervals.map(([a,b])=>({a,b,q:''})),locked:null,validation:[]}; }
+  function freshLab(kind) { return {runId:Date.now().toString(36)+'-'+Math.random().toString(36).slice(2),mode:'simulation',observations:[],lastReading:null,showComputed:false,pmfMax:.3,strokes:{pmf:[],cdf:[]},functions:{pmf:'',cdf:''},question:'',target:'',assumptions:'',comparison:'',description:'',reasoning:'',reflection:'',intervals:cfg[kind].intervals.map(([a,b])=>({a,b,q:''})),locked:null,validation:[]}; }
   let notebook={version:2,notes:{},labs:{regular:freshLab('regular'),irregular:freshLab('irregular')}};
   const pending={regular:null,irregular:null};
   let references={};
@@ -26,7 +26,7 @@
     s.lastReading=Number.isInteger(raw.lastReading)?raw.lastReading:null;
     s.showComputed=Boolean(raw.showComputed);
     s.pmfMax=[.2,.3,.5,1].includes(Number(raw.pmfMax))?Number(raw.pmfMax):.3;
-    for(const k of ['description','reasoning','reflection'])s[k]=typeof raw[k]==='string'?raw[k].slice(0,20000):'';
+    for(const k of ['question','target','assumptions','comparison','description','reasoning','reflection'])s[k]=typeof raw[k]==='string'?raw[k].slice(0,20000):'';
     for(const k of ['pmf','cdf']) {
       s.functions[k]=typeof raw.functions?.[k]==='string'?raw.functions[k].slice(0,20000):'';
       if(Array.isArray(raw.strokes?.[k]))s.strokes[k]=raw.strokes[k].slice(0,1000).map(st=>Array.isArray(st)?st.filter(p=>Array.isArray(p)&&p.length===2&&p.every(v=>Number.isFinite(v)&&v>=0&&v<=1)).slice(0,10000):[]);
@@ -34,7 +34,7 @@
     if(Array.isArray(raw.intervals)&&raw.intervals.length===3)s.intervals=raw.intervals.map((r,i)=>({a:r.a===''?'':Number.isInteger(Number(r.a))?Number(r.a):s.intervals[i].a,b:r.b===''?'':Number.isInteger(Number(r.b))?Number(r.b):s.intervals[i].b,q:typeof r.q==='number'||typeof r.q==='string'?String(r.q).slice(0,20):''}));
     const locked=raw.locked;
     if(locked&&Array.isArray(locked.intervals)&&locked.intervals.length===3&&locked.intervals.every(r=>Number.isInteger(r.a)&&Number.isInteger(r.b)&&r.a>=c.min&&r.b<=c.max&&r.a<=r.b&&Number.isFinite(r.q)&&r.q>=0&&r.q<=1)) {
-      s.locked={intervals:locked.intervals.map(r=>({a:r.a,b:r.b,q:r.q})),n:s.observations.length,at:typeof locked.at==='string'?locked.at:'',reasoning:typeof locked.reasoning==='string'?locked.reasoning:''};
+      s.locked={intervals:locked.intervals.map(r=>({a:r.a,b:r.b,q:r.q})),n:s.observations.length,at:typeof locked.at==='string'?locked.at:'',reasoning:typeof locked.reasoning==='string'?locked.reasoning:'',model:locked.model&&typeof locked.model==='object'?locked.model:null};
       s.intervals=s.locked.intervals.map(r=>({...r,q:String(r.q)}));
       s.validation=Array.isArray(raw.validation)?raw.validation.filter(Number.isInteger).filter(x=>x>=c.min&&x<=c.max).slice(0,10):[];
     }
@@ -125,6 +125,7 @@
   function labHTML(kind) {
     const s=notebook.labs[kind],c=cfg[kind];
     return `<div class="lab-header"><label>Data source <select id="${kind}-mode" ${s.observations.length||s.locked?'disabled':''}><option value="simulation" ${s.mode==='simulation'?'selected':''}>Simulation</option><option value="physical" ${s.mode==='physical'?'selected':''}>Physical dice</option></select></label><span class="lab-state">${s.locked?s.validation.length===10?'Validation complete':'Predictions locked':'Collecting observations'}</span><button class="quiet small" data-action="reset" data-kind="${kind}">New experiment</button></div>
+      <div class="model-record"><p class="phase-label">Frame · Question and tools</p><label>What scientific question will your model answer?<textarea data-lab-field="question" data-kind="${kind}" rows="2" ${s.locked?'disabled':''} placeholder="Define a future event, the observational unit and the population.">${esc(s.question)}</textarea></label><label>Define the prediction target and measurement assumptions<textarea data-lab-field="assumptions" data-kind="${kind}" rows="2" ${s.locked?'disabled':''} placeholder="Your training readings are Y; your opaque prediction concerns S. Explain the link and the independence assumption.">${esc(s.assumptions)}</textarea></label></div>
       <div class="phase-title"><span>Observe</span><h3>Collect fuzzy measurements</h3></div>
       <p>Record the <strong>sum of three dice</strong> for each fresh roll. Aim for at least 30 measurements or pool comparable data from your group. Keep the dice and viewing conditions fixed. Add only readings from the selected data source.</p>
       ${s.mode==='simulation'?`<div class="measurement-box"><canvas id="${kind}-sensor" class="sensor-visual" width="360" height="310" aria-label="Translucent cup illustration. Read the reported measurement alongside it."></canvas><div><p>A simulated instrument reports a noisy total. This is synthetic measurement data, not a direct reading of the true faces.</p><div id="${kind}-reading" class="reading">${s.lastReading===null?'—':s.lastReading}<small>Observed total y</small></div><div class="controls sim-controls"><button data-action="sample" data-kind="${kind}" ${s.locked?'disabled':''}>Take one reading</button><button class="secondary" data-action="sample-batch" data-kind="${kind}" ${s.locked?'disabled':''}>Add 20 readings</button></div></div></div>`:`<p>Use a translucent cup and the same three physical dice. Enter your estimated totals. The instructor keeps clear reference values separate.</p>`}
@@ -138,6 +139,8 @@
       <label class="field-label">Describe your plots, or use this as an alternative to drawing<textarea data-lab-field="description" data-kind="${kind}" rows="3" placeholder="State the axes, shape, any peaks or gaps, and CDF steps.">${esc(s.description)}</textarea></label></div>
       <details><summary>Formula hints</summary><p>p̂ᵧ(y) = n(y)/N. F̂ᵧ(x) = (number of readings at or below x)/N. For integer readings, P̂(a ≤ Y ≤ b) = F̂ᵧ(b) − F̂ᵧ(a − 1).</p><p>These describe the observed variable Y. If you use them to predict the true total S, write down what you assume about measurement error.</p></details>
       <button class="secondary" data-action="toggle-computed" data-kind="${kind}" ${!s.observations.length?'disabled':''}>${s.showComputed?'Hide computed comparison':'Compare with computed plots'}</button><div id="${kind}-computed" ${s.showComputed?'':'hidden'}>${computedPlots(kind)}</div>
+      ${theoryComparison(kind)}
+      <label class="field-label">Compare your empirical model with the theoretical framework<textarea data-lab-field="comparison" data-kind="${kind}" rows="3" placeholder="Compare the same variable and units. Explain finite sampling, instrument effects and what is unknown.">${esc(s.comparison)}</textarea></label>
       <div class="phase-title"><span>Predict</span><h3>Choose intervals before the next ten rolls</h3></div><p>The opaque cup holds a fresh roll of these same three dice. Use your fuzzy observations to estimate the chance that its true total falls in each chosen interval. Endpoints are included.</p>
       <div class="table-scroll"><table class="prediction-table"><thead><tr><th>Event</th><th>From a</th><th>To b</th><th>Predicted probability q</th><th>Expected in 10</th></tr></thead><tbody>${s.intervals.map((r,i)=>`<tr><td>${i+1}</td><td><input aria-label="Interval ${i+1} start for ${c.name}" data-interval="${i}" data-property="a" data-kind="${kind}" type="number" min="${c.min}" max="${c.max}" value="${r.a}" ${s.locked?'disabled':''}></td><td><input aria-label="Interval ${i+1} end for ${c.name}" data-interval="${i}" data-property="b" data-kind="${kind}" type="number" min="${c.min}" max="${c.max}" value="${r.b}" ${s.locked?'disabled':''}></td><td><input class="probability-input" aria-label="Interval ${i+1} probability for ${c.name}" data-interval="${i}" data-property="q" data-kind="${kind}" type="number" min="0" max="1" step="0.001" placeholder="0 to 1" value="${esc(r.q)}" ${s.locked?'disabled':''}></td><td class="number" id="${kind}-expected-${i}">${r.q!==''&&Number.isFinite(Number(r.q))?number(10*Number(r.q)):'—'}</td></tr>`).join('')}</tbody></table></div>
       <p class="chart-caption">Choose intervals within ${c.min}–${c.max}. They may overlap. Probabilities only need to sum to 1 when the events form a complete, non-overlapping partition.</p>
@@ -154,6 +157,14 @@
   function frequencyTable(values){
     if(!values.length)return '<p>No readings recorded.</p>';
     const e=M.empirical(values);return `<div class="table-scroll"><table><thead><tr><th>Reading y</th><th>Count n(y)</th><th>Relative frequency p̂ᵧ(y)</th><th>Cumulative F̂ᵧ(y)</th></tr></thead><tbody>${[...e.counts].sort((a,b)=>a[0]-b[0]).map(([y,n])=>`<tr><td>${y}</td><td>${n}</td><td>${n}/${e.n} = ${number(n/e.n)}</td><td>${number(M.cdf(e.pmf,y))}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+  function theoryComparison(kind){
+    const s=notebook.labs[kind],c=cfg[kind];
+    if(kind==='irregular'&&(s.validation.length<10||s.mode==='physical'))return `<div class="reference-review"><h3>Theoretical framework · Unknown face distributions</h3><p>The true total is the sum of three independent contributions. Their face labels are unknown, so the learner has no specified theoretical curve yet. Build the empirical model from observations. ${s.mode==='simulation'?'The simulation reference becomes available after the ten validation rolls.':'These physical face distributions remain unspecified. A separate face audit or calibration record is needed for a theoretical curve; the simulator preset does not describe your physical dice.'}</p></div>`;
+    const truth=M.distribution(c.dice).pmf,observed=window.Dependence.measured(truth,{min:c.min,max:c.max}),e=M.empirical(s.observations).pmf,sim=s.mode==='simulation',model=sim?observed:truth;
+    const pair=window.Course.bars([{pmf:model,label:sim?'Theoretical observed Y':'Theoretical true S',color:'#185b80'},{pmf:e,label:'Empirical observed Y',color:'#087e78'}],{min:Math.min(c.min,...s.observations),max:Math.max(c.max,...s.observations),title:'Theoretical and empirical distributions'});
+    const refs=Array.isArray(references[s.runId])?references[s.runId].filter(r=>Number.isInteger(r.truth)):[];
+    return `<details class="reference-review"><summary>${kind==='irregular'?'Reveal the after-validation simulation reference':'Compare theoretical and empirical models'}</summary><p>${sim?'Both plotted curves concern observed Y. The theoretical curve enumerates fair independent faces, then applies this simulator’s sensor: −1, 0, +1 with probabilities 0.15, 0.70, 0.15 and clipping at the physical limits.':'The reference concerns true S while your empirical curve concerns observed Y. A direct match requires negligible measurement error or a calibrated observation model; the physical instrument has no specified error distribution here.'}</p>${pair}<p>The true-total model has mean ${number([...truth].reduce((a,[x,p])=>a+x*p,0))}. Your sample mean reading is ${s.observations.length?number(M.mean(s.observations)):'not yet available'}. Finite sampling and measurement can explain different shapes.</p>${s.validation.length===10?`<details><summary>Review held-back calibration after validation</summary>${refs.length?`<p>${refs.length} simulated training reference pairs. Mean reading error Y − S = ${number(M.mean(refs.map(r=>r.y-r.truth)))}.</p>${window.Course.table(['Observed Y','Reference S','Y − S'],refs.slice(0,20).map(r=>[r.y,r.truth,r.y-r.truth]))}<p>Showing the first twenty pairs. Calibration is for interpreting the frozen forecast; revising the model requires a new validation set.</p>`:'<p>No simulated reference pairs are saved for these observations. Ask the checker for the separately recorded physical calibration values.</p>'}</details>`:''}</details>`;
   }
   function computedPlots(kind){
     const s=notebook.labs[kind];if(!s.observations.length)return '';
@@ -250,7 +261,7 @@
       }
       if(action==='lock'){
         if(s.observations.length<5)throw new Error('Collect at least five observations first; aim for 30 or more in the seminar.');
-        const rows=getIntervals(kind);s.locked={intervals:rows,n:s.observations.length,at:new Date().toISOString(),reasoning:s.reasoning};pending[kind]=null;save();mountLab(kind);message(kind,`Predictions locked using ${s.observations.length} training readings. Now test ten independent rolls.`);
+        const rows=getIntervals(kind);s.locked={intervals:rows,n:s.observations.length,at:new Date().toISOString(),reasoning:s.reasoning,model:JSON.parse(JSON.stringify({question:s.question,assumptions:s.assumptions,functions:s.functions,strokes:s.strokes,description:s.description}))};pending[kind]=null;save();mountLab(kind);message(kind,`Predictions locked using ${s.observations.length} training readings. Now test ten independent rolls.`);
       }
       if(action==='opaque-roll'){
         if(!s.locked||s.validation.length>=10)return;
@@ -291,5 +302,6 @@
   function restoreNotes(){$$('[data-note]').forEach(el=>el.value=notebook.notes[el.dataset.note]||'');}
   const observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){$$('.sidebar nav a').forEach(a=>a.classList.toggle('active',a.hash==='#'+entry.target.id));}},{rootMargin:'-10% 0px -65% 0px'});
   $$('main>section').forEach(el=>observer.observe(el));
+  window.LessonOne={snapshot:()=>notebook,validate:loadNotebook,storeImport:raw=>{notebook=loadNotebook(raw);localStorage.setItem(STORAGE,JSON.stringify(notebook));}};
   renderFrequency();renderSums();renderNormal();mountLab('regular');mountLab('irregular');restoreNotes();
 })();

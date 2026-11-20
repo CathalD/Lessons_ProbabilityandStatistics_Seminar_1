@@ -1,0 +1,26 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const M=require('../math.js'),D=require('../dependence.js');
+const near=(a,b,t=1e-10)=>assert.ok(Math.abs(a-b)<t,`${a} != ${b}`);
+const conditional=D.randomTheory(),mixture=D.marginal(conditional);
+conditional.forEach((p,i)=>{near([...p.values()].reduce((a,b)=>a+b,0),1);near([...p].reduce((a,[x,p])=>a+x*p,0),3.5*(i+1));});
+near(M.interval(conditional[0],10,18),0);near(M.interval(conditional[1],10,18),1/6);near(M.interval(conditional[2],10,18),5/8);near(M.interval(mixture,10,18),19/72);
+near([...mixture].reduce((s,[x,p])=>s+x*p,0),7);near([...mixture].reduce((s,[x,p])=>s+(x-7)**2*p,0),14);
+for(const p of D.randomTheory(true))near([...p.values()].reduce((a,b)=>a+b,0),1);
+const observed=D.measured(new Map([[3,1]]),{min:3,max:18});near(observed.get(3),.85);near(observed.get(4),.15);
+const pairs=[];for(let c=1;c<=6;c++)for(let a=1;a<=6;a++)for(let b=1;b<=6;b++)pairs.push({x:c+a,y:c+b});
+near(D.covariance(pairs)*(pairs.length-1)/pairs.length,35/12);near(D.correlation(pairs),.5);
+near(D.mean(pairs.filter(r=>r.x===10).map(r=>+(r.y>=9))),.5);
+assert.equal(D.correlation([{x:1,y:2},{x:1,y:3}]),null);assert.equal(D.covariance([]),null);
+near(D.brier([.7,.2],[1,0]),.065);
+for(const kind of ['shared','independent','ordinary','types','fixed','spatial','random'])for(let i=0;i<100;i++){const r=D.trial(kind,false);assert.equal(r.y,r.truth);if(kind==='fixed')assert.equal(r.x+r.y,14);if(kind==='spatial'){assert.equal(r.sites.length,5);assert.equal(r.x,r.sites[1]);assert.equal(r.y,r.sites[2]);}}
+assert.deepEqual([0,1,2,3,4].map(h=>D.spatialCov(h)),[8.75,35/6,35/12,0,0]);
+assert.equal(D.band(8,'spatial'),0);assert.equal(D.band(9,'spatial'),1);assert.equal(D.band(13,'spatial'),2);
+assert.throws(()=>D.parseRows('4, 8','random'));assert.throws(()=>D.parseRows('1, 2, 3','shared'));assert.throws(()=>D.parseRows('1, 2, x, 4, 5','spatial'));
+assert.deepEqual(D.parseRows('1, 4\n3, 12','random'),[{x:1,y:4},{x:3,y:12}]);
+const data=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'../data/assessments.json'),'utf8'));
+assert.equal(data.insects.training.length,8);assert.equal(data.insects.validation.length,4);near(D.mean(data.insects.training.map(r=>+(r.count<=2))),.75);
+assert.equal(data.meuse.training.length,140);assert.equal(data.meuse.validation.length,15);const ids=new Set(data.meuse.validation.map(r=>r.sample_id));assert.ok(data.meuse.training.every(r=>!ids.has(r.sample_id)));assert.ok(data.soilDistribution.every(r=>!ids.has(r.sample_id)));
+assert.equal(data.trees.training.length,21);assert.equal(data.trees.validation.length,10);
+const before={overall:.3,groups:[0,.2,.7]},validation=[{x:1,y:4},{x:3,y:12}];near(D.scores(validation,before,'random').conditional,.045);
+console.log('Passed: random sums, conditional boundaries, sensor model, shared covariance, validation scoring and real-data separation.');
